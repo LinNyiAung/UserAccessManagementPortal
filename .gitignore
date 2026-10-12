@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/dist/
+examples/spa_demo/web/dist/
+*.egg-info/
+
+# secrets & local data
+.env
+backend/keys/
+*.db
