@@ -1,0 +1,19 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e12]:
+        - generic [ref=e13]: Online Approval
+        - generic [ref=e14]: Pahtama Group
+      - generic [ref=e15]:
+        - heading "Every request and approval in one place." [level=2] [ref=e16]
+        - paragraph [ref=e17]: Sign in once to raise and approve company forms — starting with the Promotional Approval Form.
+        - list [ref=e18]:
+          - listitem [ref=e19]: Role-based access for requesters and approvers
+          - listitem [ref=e23]: Approval chain from the live DOA
+          - listitem [ref=e27]: Email notification on every step
+      - generic [ref=e31]: Pahtama Group · Online Approval
+    - generic [ref=e33]:
+      - heading "Signing you in…" [level=3] [ref=e34]
+      - paragraph [ref=e35]: Using your company account on the Access Portal.
+      - paragraph [ref=e39]: Sign-in is managed by the company Access Portal.
+  - status

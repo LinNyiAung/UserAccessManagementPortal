@@ -15,7 +15,7 @@ export default function UserDetailPage() {
   const [apps, setApps] = useState<Application[]>([]);
   const [error, setError] = useState("");
 
-  const [profile, setProfile] = useState({ email: "", full_name: "", is_active: true, is_admin: false, password: "" });
+  const [profile, setProfile] = useState({ email: "", is_active: true, is_admin: false, password: "" });
   const [profileError, setProfileError] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [savingRoles, setSavingRoles] = useState(false);
@@ -31,7 +31,7 @@ export default function UserDetailPage() {
 
   function load(u: UserDetail) {
     setUser(u);
-    setProfile({ email: u.email, full_name: u.full_name, is_active: u.is_active, is_admin: u.is_admin, password: "" });
+    setProfile({ email: u.email, is_active: u.is_active, is_admin: u.is_admin, password: "" });
     setSelected(new Set(u.role_ids));
   }
 
@@ -117,7 +117,7 @@ export default function UserDetailPage() {
   if (error) return <Alert>{error}</Alert>;
   if (!user) return <Spinner />;
   const isSelf = me?.id === user.id;
-  const name = user.full_name || user.username;
+  const name = user.username;
   const systemsWithAccess = apps.filter((a) => a.roles.some((r) => selected.has(r.id))).length;
 
   return (
@@ -137,7 +137,7 @@ export default function UserDetailPage() {
             </span>
           </span>
         }
-        subtitle={<>{user.username} · {user.email} · last sign-in <TimeAgo value={user.last_login_at} /></>}
+        subtitle={<>{user.email} · last sign-in <TimeAgo value={user.last_login_at} /></>}
       />
 
       <div className="detail-grid">
@@ -186,7 +186,6 @@ export default function UserDetailPage() {
           <form className="card" onSubmit={saveProfile}>
             <h2>Account</h2>
             <Alert>{profileError}</Alert>
-            <label>Full name<input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} /></label>
             <label>Email<input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} required /></label>
             <label>
               Reset password

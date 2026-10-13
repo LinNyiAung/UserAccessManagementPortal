@@ -29,7 +29,7 @@ def _bootstrap() -> None:
         if db.scalar(select(func.count(User.id))) == 0:
             password = settings.admin_password or new_token(12)
             db.add(User(username=settings.admin_username, email=settings.admin_email.lower(),
-                        full_name="Administrator", password_hash=hash_password(password), is_admin=True))
+                        password_hash=hash_password(password), is_admin=True))
             if settings.admin_password:
                 log.warning("Created initial admin '%s' (password from ADMIN_PASSWORD).", settings.admin_username)
             else:

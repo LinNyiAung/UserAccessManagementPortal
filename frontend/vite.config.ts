@@ -3,8 +3,8 @@ import react from "@vitejs/plugin-react";
 
 // In development the portal UI and the API share one origin (this dev server),
 // so the SSO session cookie and the OIDC endpoints live under the same URL.
-// Port 8100: 8000 belongs to the Logistics Price Calculator's API.
-const backend = "http://127.0.0.1:8100";
+// Port 8110, the same as on the server (8000 belongs to the Logistics Price Calculator's API).
+const backend = "http://127.0.0.1:8110";
 
 export default defineConfig({
   plugins: [react()],

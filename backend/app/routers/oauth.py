@@ -197,7 +197,7 @@ def _issue_tokens(db: DbSession, app: Application, user: User, scope: str,
     ttl = settings.access_token_ttl_minutes * 60
     identity = {
         "preferred_username": user.username,
-        "name": user.full_name or user.username,
+        "name": user.username,
         "email": user.email,
         "roles": roles,
         "permissions": user.permissions_in(app.id),
@@ -308,7 +308,7 @@ def userinfo(request: Request, db: DbSession = Depends(get_db)):
     return {
         "sub": str(user.id),
         "preferred_username": user.username,
-        "name": user.full_name or user.username,
+        "name": user.username,
         "email": user.email,
         "roles": user.roles_in(app.id),
         "permissions": user.permissions_in(app.id),

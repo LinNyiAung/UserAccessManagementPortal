@@ -1,0 +1,11 @@
+[    4659ms] [ERROR] Access to fetch at 'http://10.80.23.210:8110/.well-known/openid-configuration' from origin 'http://10.80.21.130:8399' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://10.80.21.130:8399/:0
+[    4660ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://10.80.23.210:8110/.well-known/openid-configuration:0
+[    4676ms] TypeError: Failed to fetch
+    at Tl.fetchWithTimeout (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:16073)
+    at Tl.getJson (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:16613)
+    at Pg.getMetadata (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:20005)
+    at Pg._getMetadataProperty (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:20991)
+    at Pg.getAuthorizationEndpoint (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:20361)
+    at qg.createSigninRequest (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:42109)
+    at Mh._signinStart (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:68260)
+    at Mh.signinRedirect (http://10.80.21.130:8399/assets/index-CucLrNdI.js:67:63106)

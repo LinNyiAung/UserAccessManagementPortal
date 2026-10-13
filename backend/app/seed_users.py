@@ -23,7 +23,7 @@ from .security import new_token
 
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
-# username, full name, {client_id: roles}, active
+# username, display name (for reference only; the portal uses the username), {client_id: roles}, active
 SAMPLE_USERS = [
     ("alice.tan", "Alice Tan", {"promotion-approval": ["requester"]}, True),
     ("bob.lim", "Bob Lim", {"promotion-approval": ["approver"]}, True),   # role but no approver profile (test)
@@ -108,7 +108,7 @@ def main() -> None:
         role_ids = {(cid, r["name"]): r["id"] for cid, a in apps.items() for r in a["roles"]}
 
         existing = {u["username"]: u for u in api.get("/api/admin/users").json()}
-        for username, full_name, access, active in SAMPLE_USERS:
+        for username, _display_name, access, active in SAMPLE_USERS:
             if username in existing:
                 user = api.get(f"/api/admin/users/{existing[username]['id']}").json()
                 verb = "update"
@@ -116,7 +116,6 @@ def main() -> None:
                 r = api.post("/api/admin/users", json={
                     "username": username,
                     "email": f"{username}@example.com",
-                    "full_name": full_name,
                     "password": password,
                     "is_active": active,
                 })

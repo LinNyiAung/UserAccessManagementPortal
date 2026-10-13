@@ -28,7 +28,7 @@ Single sign-on and central role management for the company's systems.
 
 Requires Python 3.11+ and Node 18+.
 
-**1. Backend** (port 8100; 8000 is used by the Logistics Price Calculator's API)
+**1. Backend** (port 8110, the same as on the server; 8000 is used by the Logistics Price Calculator's API)
 
 ```bash
 cd backend
@@ -36,7 +36,7 @@ python -m venv .venv
 .venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 copy .env.example .env          # set ADMIN_PASSWORD, or read the generated one from the log
-uvicorn app.main:app --reload --port 8100
+uvicorn app.main:app --reload --port 8110
 ```
 
 The first start creates the database, an RSA signing key in `backend/keys/`, and the initial admin account.

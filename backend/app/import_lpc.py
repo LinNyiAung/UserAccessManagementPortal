@@ -141,7 +141,7 @@ def main() -> None:
                 if db.scalar(select(User).where(func.lower(User.email) == email)):
                     audit("user.skipped", username, f"email {email} already belongs to another portal user")
                     continue
-                user = User(username=username, email=email, full_name=username,
+                user = User(username=username, email=email,
                             password_hash=u["hashed_password"], is_active=True)
                 db.add(user)
                 audit("user.create", username, f"LPC user {u['username']} (id {u['id']}), LPC password kept")

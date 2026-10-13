@@ -70,7 +70,7 @@ def list_users(q: str | None = None, db: DbSession = Depends(get_db), _: User = 
     )
     if q:
         like = f"%{q.strip()}%"
-        stmt = stmt.where(or_(User.username.ilike(like), User.email.ilike(like), User.full_name.ilike(like)))
+        stmt = stmt.where(or_(User.username.ilike(like), User.email.ilike(like)))
     return [
         UserListItem(**UserOut.model_validate(u).model_dump(), access=_access(u))
         for u in db.scalars(stmt).all()
@@ -85,7 +85,6 @@ def create_user(body: UserCreate, request: Request, db: DbSession = Depends(get_
     user = User(
         username=body.username,
         email=email,
-        full_name=body.full_name.strip(),
         password_hash=hash_password(body.password),
         is_admin=body.is_admin,
         is_active=body.is_active,
@@ -114,8 +113,6 @@ def update_user(user_id: int, body: UserUpdate, request: Request, db: DbSession 
         email = str(data["email"]).lower()
         _ensure_unique(db, email=email, exclude_id=user.id)
         user.email = email
-    if "full_name" in data:
-        user.full_name = data["full_name"].strip()
     if "is_admin" in data:
         user.is_admin = data["is_admin"]
     if "is_active" in data:

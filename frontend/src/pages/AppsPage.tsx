@@ -19,7 +19,7 @@ export default function AppsPage() {
     api.get<MyApplication[]>("/api/me/applications").then(setApps).catch((e) => setError(errorMessage(e)));
   }, []);
 
-  const firstName = (user?.full_name || user?.username || "").split(" ")[0];
+  const firstName = user?.username || "";
   const shown = apps?.filter((a) => `${a.name} ${a.description}`.toLowerCase().includes(q.toLowerCase())) ?? [];
 
   return (

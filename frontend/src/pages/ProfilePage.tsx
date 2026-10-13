@@ -33,7 +33,7 @@ export default function ProfilePage() {
   }
 
   if (!user) return null;
-  const name = user.full_name || user.username;
+  const name = user.username;
   return (
     <>
       <div className="profile-header">
@@ -41,7 +41,7 @@ export default function ProfilePage() {
         <div>
           <h1>{name}</h1>
           <div className="muted">
-            {user.username} · {user.email}
+            {user.email}
             {user.is_admin && <> · <Badge tone="blue">Portal administrator</Badge></>}
           </div>
         </div>

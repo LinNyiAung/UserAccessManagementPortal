@@ -5,7 +5,7 @@ import { useFeedback } from "../../components/feedback";
 import Icon from "../../components/Icon";
 import { Alert, Avatar, Badge, EmptyState, Modal, PageHeader, PasswordInput, Spinner, StatusBadge, TimeAgo } from "../../components/ui";
 
-const emptyForm = { username: "", email: "", full_name: "", password: "", is_admin: false };
+const emptyForm = { username: "", email: "", password: "", is_admin: false };
 
 const FILTERS = {
   all: { label: "All", match: () => true },
@@ -15,10 +15,6 @@ const FILTERS = {
   admins: { label: "Admins", match: (u: UserListItem) => u.is_admin },
 } as const;
 type FilterId = keyof typeof FILTERS;
-
-function suggestUsername(fullName: string) {
-  return fullName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "");
-}
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -30,7 +26,6 @@ export default function UsersPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [usernameTouched, setUsernameTouched] = useState(false);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -46,7 +41,6 @@ export default function UsersPage() {
 
   function openForm() {
     setForm(emptyForm);
-    setUsernameTouched(false);
     setFormError("");
     setShowForm(true);
   }
@@ -57,7 +51,7 @@ export default function UsersPage() {
     setSaving(true);
     try {
       const created = await api.post<UserDetail>("/api/admin/users", form);
-      toast(`${created.full_name || created.username} created. Now choose their system access.`);
+      toast(`${created.username} created. Now choose their system access.`);
       navigate(`/admin/users/${created.id}`);
     } catch (err) {
       setFormError(errorMessage(err));
@@ -88,7 +82,7 @@ export default function UsersPage() {
           </div>
           <div className="search-box">
             <Icon name="search" />
-            <input placeholder="Search name, username or email…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input placeholder="Search username or email…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
         </div>
 
@@ -107,12 +101,12 @@ export default function UsersPage() {
                   <tr key={u.id} onClick={() => navigate(`/admin/users/${u.id}`)} className="clickable">
                     <td>
                       <div className="person">
-                        <Avatar name={u.full_name || u.username} size={34} />
+                        <Avatar name={u.username} size={34} />
                         <div>
                           <div className="person-name">
-                            {u.full_name || u.username} {u.is_admin && <Badge tone="blue">Admin</Badge>}
+                            {u.username} {u.is_admin && <Badge tone="blue">Admin</Badge>}
                           </div>
-                          <div className="muted small" title={`Username: ${u.username}`}>{u.email}</div>
+                          <div className="muted small">{u.email}</div>
                         </div>
                       </div>
                     </td>
@@ -152,22 +146,15 @@ export default function UsersPage() {
       >
         <form id="new-user" className="form-grid" onSubmit={handleCreate}>
           <div className="span-2"><Alert>{formError}</Alert></div>
-          <label className="span-2">
-            Full name
-            <input
-              value={form.full_name}
-              autoFocus
-              onChange={(e) => setForm({ ...form, full_name: e.target.value, username: usernameTouched ? form.username : suggestUsername(e.target.value) })}
-            />
-          </label>
           <label>
             Username
             <input
               value={form.username}
+              autoFocus
               required
               pattern="[A-Za-z0-9._\-]{3,100}"
               title="3–100 letters, digits, dots, underscores or dashes"
-              onChange={(e) => { setUsernameTouched(true); setForm({ ...form, username: e.target.value }); }}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
             />
           </label>
           <label>

@@ -31,7 +31,6 @@ class UserOut(ORM):
     id: int
     username: str
     email: str
-    full_name: str
     is_active: bool
     is_admin: bool
     created_at: datetime
@@ -55,7 +54,6 @@ class UserListItem(UserOut):
 class UserCreate(BaseModel):
     username: str = Field(pattern=USERNAME_PATTERN)
     email: EmailStr
-    full_name: str = Field(default="", max_length=255)
     password: str = Field(min_length=8, max_length=72)
     is_admin: bool = False
     is_active: bool = True
@@ -63,7 +61,6 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
-    full_name: str | None = Field(default=None, max_length=255)
     password: str | None = Field(default=None, min_length=8, max_length=72)
     is_admin: bool | None = None
     is_active: bool | None = None
@@ -211,7 +208,6 @@ class ApplicationWithSecret(ApplicationOut):
 class Member(BaseModel):
     user_id: int
     username: str
-    full_name: str
     email: str
     is_active: bool
     roles: list[str]

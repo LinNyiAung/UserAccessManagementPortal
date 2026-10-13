@@ -45,7 +45,7 @@ def test_full_sso_flow(client: TestClient):
     editor = client.post(f"/api/admin/applications/{hr['id']}/roles", json={"name": "editor"}).json()
 
     created_user = client.post("/api/admin/users", json={
-        "username": "alice", "email": "alice@corp.example.com", "full_name": "Alice A", "password": "alice-pass-1",
+        "username": "alice", "email": "alice@corp.example.com", "password": "alice-pass-1",
     })
     assert created_user.status_code == 201, created_user.text
     alice = created_user.json()
@@ -230,9 +230,7 @@ def test_delete_application_with_granted_permissions_and_members(client: TestCli
     client.put(f"/api/admin/applications/{app_id}/role-permissions", json={"roles": {str(lead["id"]): [perm["id"]]}})
     user = client.post("/api/admin/users", json={
         "username": "ops.user", "email": "ops.user@corp.example.com", "password": "ops-pass-12",
-        "full_name": "သီတာ ဝင်း",
     }).json()
-    assert client.get(f"/api/admin/users/{user['id']}").json()["full_name"] == "သီတာ ဝင်း"
     client.put(f"/api/admin/users/{user['id']}/roles", json={"role_ids": [lead["id"]]})
 
     assert client.delete(f"/api/admin/applications/{app_id}").status_code == 204
