@@ -35,7 +35,7 @@ def test_full_sso_flow(client: TestClient):
 
     # Admin registers a system with roles and a user.
     created = client.post("/api/admin/applications", json={
-        "name": "HR System", "client_id": "hr", "redirect_uris": [REDIRECT], "home_url": "http://hr.local/",
+        "name": "HR", "redirect_uris": [REDIRECT], "home_url": "http://hr.local/",
     })
     assert created.status_code == 201, created.text
     hr = created.json()
@@ -77,7 +77,7 @@ def test_full_sso_flow(client: TestClient):
         code = params["code"][0]
 
         apps = browser.get("/api/me/applications").json()
-        assert apps[0]["name"] == "HR System" and apps[0]["roles"] == ["editor", "viewer"]
+        assert apps[0]["name"] == "HR" and apps[0]["roles"] == ["editor", "viewer"]
 
     # The HR backend exchanges the code.
     bad = client.post("/oauth/token", data={
@@ -148,7 +148,7 @@ def test_non_admin_cannot_use_admin_api():
 def test_overview_and_access_summary(client: TestClient):
     # Runs after test_full_sso_flow: alice holds HR "viewer" and is disabled.
     users = {u["username"]: u for u in client.get("/api/admin/users").json()}
-    assert users["alice"]["access"] == [{"application_id": 1, "application_name": "HR System", "roles": ["viewer"]}]
+    assert users["alice"]["access"] == [{"application_id": 1, "application_name": "HR", "roles": ["viewer"]}]
     assert client.get("/api/admin/applications").json()[0]["member_count"] == 1
 
     ov = client.get("/api/admin/overview").json()
@@ -159,7 +159,7 @@ def test_overview_and_access_summary(client: TestClient):
 
 def test_permissions_flow_into_tokens(client: TestClient):
     fin = client.post("/api/admin/applications", json={
-        "name": "Finance", "client_id": "fin", "redirect_uris": [REDIRECT],
+        "name": "Fin", "redirect_uris": [REDIRECT],
     }).json()
     secret, app_id = fin["client_secret"], fin["id"]
     clerk = client.post(f"/api/admin/applications/{app_id}/roles", json={"name": "clerk"}).json()
@@ -221,7 +221,7 @@ def test_delete_application_with_granted_permissions_and_members(client: TestCli
     from app.models import role_permissions, user_roles
 
     ops = client.post("/api/admin/applications", json={
-        "name": "Ops ကုန်သွယ်ရေး", "client_id": "ops", "redirect_uris": [REDIRECT],
+        "name": "Ops ကုန်သွယ်ရေး", "redirect_uris": [REDIRECT],
     }).json()
     app_id = ops["id"]
     assert client.get(f"/api/admin/applications/{app_id}").json()["name"] == "Ops ကုန်သွယ်ရေး"
@@ -238,6 +238,20 @@ def test_delete_application_with_granted_permissions_and_members(client: TestCli
         assert db.execute(role_permissions.select().where(role_permissions.c.role_id == lead["id"])).first() is None
         assert db.execute(user_roles.select().where(user_roles.c.role_id == lead["id"])).first() is None
     assert client.get(f"/api/admin/users/{user['id']}").json()["role_ids"] == []
+
+
+def test_client_id_is_generated_from_the_name(client: TestClient):
+    """Admins don't type a client ID: it's made from the name, unique, and can't be supplied."""
+    made = lambda name: client.post("/api/admin/applications", json={  # noqa: E731
+        "name": name, "redirect_uris": [REDIRECT], "client_id": "chosen-by-admin"}).json()
+    first = made("Promotion Approval Form")
+    assert first["client_id"] == "promotion-approval-form"          # the supplied value is ignored
+    assert made("Promotion  Approval / Form!")["client_id"] == "promotion-approval-form-2"
+    assert made("ကုန်သွယ်ရေး")["client_id"] == "system"               # no Latin letters in the name
+    assert made("X")["client_id"] == "x-system"                       # too short on its own
+    # It never changes afterwards, even when the system is renamed.
+    renamed = client.patch(f"/api/admin/applications/{first['id']}", json={"name": "PAF"}).json()
+    assert renamed["client_id"] == "promotion-approval-form"
 
 
 def test_silent_sign_in_prompt_none():
@@ -260,13 +274,13 @@ def test_silent_sign_in_prompt_none():
 def test_web_origins_cors_and_public_client(client: TestClient):
     spa_origin, spa_redirect = "http://spa.example.com", "http://spa.example.com/"
     bad = client.post("/api/admin/applications", json={
-        "name": "Bad SPA", "client_id": "bad-spa", "confidential": False,
+        "name": "Bad SPA", "confidential": False,
         "redirect_uris": [spa_redirect], "web_origins": ["http://spa.example.com/path"],
     })
     assert bad.status_code == 422  # origins can't have a path
 
     spa = client.post("/api/admin/applications", json={
-        "name": "SPA", "client_id": "spa", "confidential": False,
+        "name": "SPA", "confidential": False,
         "redirect_uris": [spa_redirect], "web_origins": ["HTTP://spa.example.com/"],
     }).json()
     assert spa["client_secret"] is None and spa["web_origins"] == [spa_origin]  # normalised
