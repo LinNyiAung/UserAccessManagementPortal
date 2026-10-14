@@ -43,11 +43,15 @@ def create_schema() -> None:
     """Create missing tables, then add columns introduced after a database was created.
     (create_all() never alters existing tables. Use Alembic once the schema changes regularly.)"""
     Base.metadata.create_all(engine)
-    existing = {c["name"] for c in inspect(engine).get_columns("applications")}
-    if "web_origins" not in existing:
-        column = "web_origins JSON DEFAULT '[]'" if _is_sqlite else "web_origins NVARCHAR(max) NOT NULL DEFAULT '[]'"
-        with engine.begin() as conn:
-            conn.execute(text(f"ALTER TABLE applications ADD {'COLUMN ' if _is_sqlite else ''}{column}"))
+    added = [  # (table, column, SQLite definition, SQL Server definition)
+        ("applications", "web_origins", "JSON DEFAULT '[]'", "NVARCHAR(max) NOT NULL DEFAULT '[]'"),
+        ("users", "must_change_password", "BOOLEAN NOT NULL DEFAULT 0", "BIT NOT NULL DEFAULT 0"),
+    ]
+    for table, column, sqlite_def, mssql_def in added:
+        if column not in {c["name"] for c in inspect(engine).get_columns(table)}:
+            definition = sqlite_def if _is_sqlite else mssql_def
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD {'COLUMN ' if _is_sqlite else ''}{column} {definition}"))
 
 
 def get_db():

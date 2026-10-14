@@ -3,6 +3,7 @@ import { RequireAuth } from "./auth";
 import Layout from "./components/Layout";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
 import AppsPage from "./pages/AppsPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import ApplicationDetailPage from "./pages/admin/ApplicationDetailPage";
@@ -17,6 +18,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/access-denied" element={<AccessDeniedPage />} />
+      <Route path="/change-password" element={<ChangePasswordPage />} />
       <Route
         element={
           <RequireAuth>

@@ -16,6 +16,15 @@ def login(c: TestClient, username: str, password: str):
     return c.post("/api/auth/login", json={"username": username, "password": password})
 
 
+def first_sign_in(c: TestClient, username: str, temporary: str) -> str:
+    """Sign in with the password an admin set and replace it, as the portal requires. Returns the new one."""
+    assert login(c, username, temporary).status_code == 200
+    own = f"{temporary}-mine"
+    assert c.post("/api/auth/change-password",
+                  json={"current_password": temporary, "new_password": own}).status_code == 204
+    return own
+
+
 def pkce():
     verifier = secrets.token_urlsafe(48)
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
@@ -59,7 +68,7 @@ def test_full_sso_flow(client: TestClient):
         r = authorize(browser, "hr", challenge)
         assert r.status_code == 302 and urlparse(r.headers["location"]).path == "/login"
 
-        assert login(browser, "alice", "alice-pass-1").status_code == 200
+        first_sign_in(browser, "alice", "alice-pass-1")
 
         # Signed in but no role in HR -> access denied, no code.
         r = authorize(browser, "hr", challenge)
@@ -184,7 +193,7 @@ def test_permissions_flow_into_tokens(client: TestClient):
     client.put(f"/api/admin/users/{bob['id']}/roles", json={"role_ids": [clerk["id"]]})
 
     with TestClient(app) as browser:
-        login(browser, "bob", "bob-pass-12")
+        first_sign_in(browser, "bob", "bob-pass-12")
         verifier, challenge = pkce()
         loc = authorize(browser, "fin", challenge).headers["location"]
         code = parse_qs(urlparse(loc).query)["code"][0]
@@ -254,6 +263,44 @@ def test_client_id_is_generated_from_the_name(client: TestClient):
     assert renamed["client_id"] == "promotion-approval-form"
 
 
+def test_new_user_must_change_password_before_any_system(client: TestClient):
+    """An admin-set password is temporary: no system sign-in until the user picks their own."""
+    dana = client.post("/api/admin/users", json={
+        "username": "dana", "email": "dana@corp.example.com", "password": "dana-temp-1"}).json()
+    assert dana["must_change_password"] is True
+    hr = next(a for a in client.get("/api/admin/applications").json() if a["client_id"] == "hr")
+    client.put(f"/api/admin/users/{dana['id']}/roles", json={"role_ids": [hr["roles"][0]["id"]]})
+
+    with TestClient(app) as browser:
+        assert login(browser, "dana", "dana-temp-1").json()["must_change_password"] is True
+        _, challenge = pkce()
+        r = authorize(browser, "hr", challenge)  # sent to the portal's change-password page, not the system
+        loc = urlparse(r.headers["location"])
+        assert r.status_code == 302 and loc.path == "/change-password"
+        assert parse_qs(loc.query)["next"][0].startswith("/oauth/authorize?")
+        silent = browser.get("/oauth/authorize", params={  # silent sign-in reports it to the system
+            "client_id": "hr", "redirect_uri": REDIRECT, "response_type": "code", "scope": "openid",
+            "code_challenge": challenge, "code_challenge_method": "S256", "prompt": "none"},
+            follow_redirects=False)
+        assert parse_qs(urlparse(silent.headers["location"]).query)["error"] == ["interaction_required"]
+        assert browser.get("/api/admin/users").status_code == 403  # nor the admin API
+
+        same = browser.post("/api/auth/change-password",
+                            json={"current_password": "dana-temp-1", "new_password": "dana-temp-1"})
+        assert same.status_code == 400  # must actually change
+        assert browser.post("/api/auth/change-password",
+                            json={"current_password": "dana-temp-1", "new_password": "dana-own-pass"}).status_code == 204
+        assert browser.get("/api/auth/me").json()["must_change_password"] is False
+        assert "code" in parse_qs(urlparse(authorize(browser, "hr", challenge).headers["location"]).query)
+
+    # An admin reset makes the password temporary again (and signs the user out everywhere).
+    client.patch(f"/api/admin/users/{dana['id']}", json={"password": "dana-reset-1"})
+    assert client.get(f"/api/admin/users/{dana['id']}").json()["must_change_password"] is True
+    with TestClient(app) as browser:
+        login(browser, "dana", "dana-reset-1")
+        assert urlparse(authorize(browser, "hr", pkce()[1]).headers["location"]).path == "/change-password"
+
+
 def test_silent_sign_in_prompt_none():
     """prompt=none never shows portal UI: it returns a code or an error to the system."""
     _, challenge = pkce()
@@ -265,7 +312,7 @@ def test_silent_sign_in_prompt_none():
         assert r.headers["location"].startswith(REDIRECT) and q["error"] == ["login_required"] and q["state"] == ["st"]
 
         # Signed in but no role in HR: access_denied goes back to the system, not the portal page.
-        assert login(browser, "bob", "bob-pass-12").status_code == 200
+        assert login(browser, "bob", "bob-pass-12-mine").status_code == 200
         r = browser.get("/oauth/authorize", params=params, follow_redirects=False)
         q = parse_qs(urlparse(r.headers["location"]).query)
         assert r.headers["location"].startswith(REDIRECT) and q["error"] == ["access_denied"]
@@ -307,7 +354,7 @@ def test_web_origins_cors_and_public_client(client: TestClient):
         "username": "carol", "email": "carol@corp.example.com", "password": "carol-pass-1"}).json()
     client.put(f"/api/admin/users/{carol['id']}/roles", json={"role_ids": [role["id"]]})
     with TestClient(app) as browser:
-        login(browser, "carol", "carol-pass-1")
+        first_sign_in(browser, "carol", "carol-pass-1")
         verifier, challenge = pkce()
         r = browser.get("/oauth/authorize", params={
             "client_id": "spa", "redirect_uri": spa_redirect, "response_type": "code", "scope": "openid",
@@ -332,7 +379,7 @@ def test_code_challenge_method_defaults_to_s256():
     """Apps may send just client_id, redirect_uri, state and code_challenge."""
     verifier, challenge = pkce()
     with TestClient(app) as browser:
-        login(browser, "carol", "carol-pass-1")       # created in test_web_origins_cors_and_public_client
+        login(browser, "carol", "carol-pass-1-mine")  # created (and changed) in test_web_origins_cors_and_public_client
         r = browser.get("/oauth/authorize", params={
             "client_id": "spa", "redirect_uri": "http://spa.example.com/", "state": "s",
             "code_challenge": challenge}, follow_redirects=False)

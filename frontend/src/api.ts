@@ -43,6 +43,7 @@ export interface User {
   email: string;
   is_active: boolean;
   is_admin: boolean;
+  must_change_password: boolean; // admin-set password: must be replaced before using the portal or any system
   created_at: string;
   last_login_at: string | null;
 }

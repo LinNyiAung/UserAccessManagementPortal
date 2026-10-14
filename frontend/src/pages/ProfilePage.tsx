@@ -5,7 +5,7 @@ import { useFeedback } from "../components/feedback";
 import { Alert, Avatar, Badge, EmptyState, PasswordInput, TimeAgo } from "../components/ui";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, changePassword } = useAuth();
   const { toast } = useFeedback();
   const [apps, setApps] = useState<MyApplication[]>([]);
   const [current, setCurrent] = useState("");
@@ -22,7 +22,7 @@ export default function ProfilePage() {
     setError("");
     if (next !== confirm) return setError("The new passwords don't match.");
     try {
-      await api.post("/api/auth/change-password", { current_password: current, new_password: next });
+      await changePassword(current, next);
       toast("Password updated");
       setCurrent("");
       setNext("");

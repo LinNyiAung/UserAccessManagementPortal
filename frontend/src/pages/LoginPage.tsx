@@ -6,7 +6,7 @@ import Icon from "../components/Icon";
 import { Alert, PasswordInput } from "../components/ui";
 
 /** Only same-origin relative paths are accepted, to prevent open redirects. */
-function safeNext(next: string | null): string | null {
+export function safeNext(next: string | null): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
   return next;
 }

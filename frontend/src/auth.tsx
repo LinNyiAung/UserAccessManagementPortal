@@ -7,6 +7,7 @@ interface AuthState {
   loading: boolean;
   login: (username: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -36,7 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await api.post("/api/auth/change-password", { current_password: currentPassword, new_password: newPassword });
+    setUser((u) => (u ? { ...u, must_change_password: false } : u));
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, logout, changePassword }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthState {
@@ -50,6 +58,10 @@ export function RequireAuth({ children, admin = false }: { children: ReactNode; 
   const location = useLocation();
   if (loading) return <div className="center muted">Loading…</div>;
   if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  // Signed in with a temporary (admin-set) password: nothing else until they choose their own.
+  if (user.must_change_password) {
+    return <Navigate to={`/change-password?next=${encodeURIComponent(location.pathname)}`} replace />;
+  }
   if (admin && !user.is_admin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }

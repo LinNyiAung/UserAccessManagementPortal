@@ -28,6 +28,8 @@ def get_current_user(request: Request, db: DbSession = Depends(get_db)) -> User:
 def require_admin(user: User = Depends(get_current_user)) -> User:
     if not user.is_admin:
         raise HTTPException(403, "Administrator access required")
+    if user.must_change_password:
+        raise HTTPException(403, "Change your password before using the admin pages")
     return user
 
 

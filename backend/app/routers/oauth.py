@@ -138,6 +138,14 @@ def authorize(
         return RedirectResponse(f"{settings.frontend_url}/login?" + urlencode({"next": next_url}), 302)
 
     user = session.user
+    if user.must_change_password:
+        # First sign-in with a password an admin set: no system gets a sign-in until the user picks
+        # their own. The portal page sends them back here afterwards to finish signing in.
+        if prompt == "none":
+            return error("interaction_required", "User must change their password")
+        next_url = f"{request.url.path}?{request.url.query}"
+        return RedirectResponse(f"{settings.frontend_url}/change-password?" + urlencode({"next": next_url}), 302)
+
     if not user.roles_in(app.id):
         audit(db, user, "sso.denied", target=app.name, detail="no role in application", request=request)
         db.commit()

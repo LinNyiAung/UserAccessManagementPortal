@@ -34,6 +34,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(Unicode(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)  # may administer the portal
+    # Set when an admin creates the account or resets its password: the user must choose their own
+    # password before the portal lets them into the portal or any system.
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

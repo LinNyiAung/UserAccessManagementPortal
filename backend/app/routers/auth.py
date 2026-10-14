@@ -77,7 +77,10 @@ def change_password(
 ):
     if not verify_password(body.current_password, user.password_hash):
         raise HTTPException(400, "Current password is incorrect")
+    if body.new_password == body.current_password:
+        raise HTTPException(400, "Choose a password different from the current one")
     user.password_hash = hash_password(body.new_password)
+    user.must_change_password = False
     audit(db, user, "user.password_changed", target=user.username, request=request)
     db.commit()
 

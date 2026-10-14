@@ -88,6 +88,7 @@ def create_user(body: UserCreate, request: Request, db: DbSession = Depends(get_
         password_hash=hash_password(body.password),
         is_admin=body.is_admin,
         is_active=body.is_active,
+        must_change_password=True,  # the admin chose this password; the user replaces it on first sign-in
     )
     db.add(user)
     audit(db, admin, "user.create", target=body.username, request=request)
@@ -120,6 +121,7 @@ def update_user(user_id: int, body: UserUpdate, request: Request, db: DbSession 
         kill_sessions |= not data["is_active"]
     if "password" in data:
         user.password_hash = hash_password(data["password"])
+        user.must_change_password = user.id != admin.id  # a reset password is temporary, like a new one
         kill_sessions = True
     if kill_sessions:
         terminate_user_sessions(db, user.id)

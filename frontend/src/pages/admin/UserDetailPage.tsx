@@ -196,7 +196,7 @@ export default function UserDetailPage() {
                 minLength={8}
                 maxLength={72}
               />
-              <span className="hint">Leave blank to keep the current password. Resetting signs the user out everywhere.</span>
+              <span className="hint">Leave blank to keep the current password. Resetting signs the user out everywhere, and they must choose a new one at their next sign-in.</span>
             </label>
             <label className="switch">
               <input type="checkbox" checked={profile.is_active} disabled={isSelf} onChange={(e) => setProfile({ ...profile, is_active: e.target.checked })} />
