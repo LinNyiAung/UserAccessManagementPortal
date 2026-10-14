@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 USERNAME_PATTERN = r"^[A-Za-z0-9._-]{3,100}$"
-CLIENT_ID_PATTERN = r"^[a-z0-9][a-z0-9._-]{1,99}$"
 ROLE_PATTERN = r"^[A-Za-z0-9._:-]{1,100}$"
 PERMISSION_PATTERN = r"^[A-Za-z0-9._:-]{1,100}$"
 
@@ -143,7 +142,7 @@ def _validate_origins(origins: list[str]) -> list[str]:
 
 class ApplicationCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
-    client_id: str = Field(pattern=CLIENT_ID_PATTERN)
+    # No client_id here: the portal generates it from the name (see applications._generate_client_id).
     description: str = ""
     home_url: str = Field(default="", max_length=500)
     redirect_uris: list[str] = []

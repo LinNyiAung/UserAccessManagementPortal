@@ -1,3 +1,5 @@
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import distinct, func, select
 from sqlalchemy.orm import Session as DbSession
@@ -23,6 +25,20 @@ from ..schemas import (
 from ..security import hash_token, new_token
 
 router = APIRouter(prefix="/api/admin/applications", tags=["admin: applications"])
+
+
+def _generate_client_id(db: DbSession, name: str) -> str:
+    """The system's client ID, made from its name: lower-case letters and digits joined by dashes
+    ("Promotion Approval Form" -> "promotion-approval-form"), with -2, -3 ... added if it's taken.
+    Admins don't type it, so it's always a valid, unique identifier. It never changes afterwards."""
+    base = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:90] or "system"
+    if len(base) < 2:
+        base = f"{base}-system"
+    taken = {c.lower() for c in db.scalars(select(Application.client_id))}
+    candidate, n = base, 2
+    while candidate in taken:
+        candidate, n = f"{base}-{n}", n + 1
+    return candidate
 
 
 def _get_app(db: DbSession, app_id: int) -> Application:
@@ -90,13 +106,12 @@ def create_application(body: ApplicationCreate, request: Request, db: DbSession 
                        admin: User = Depends(require_admin)):
     name = body.name.strip()
     _ensure_unique_name(db, name)
-    if db.scalar(select(Application).where(Application.client_id == body.client_id)):
-        raise HTTPException(409, "Client ID is already in use")
+    client_id = _generate_client_id(db, name)
 
     secret = new_token() if body.confidential else None
     app = Application(
         name=name,
-        client_id=body.client_id,
+        client_id=client_id,
         description=body.description.strip(),
         home_url=body.home_url.strip(),
         redirect_uris=body.redirect_uris,
@@ -104,7 +119,7 @@ def create_application(body: ApplicationCreate, request: Request, db: DbSession 
         client_secret_hash=hash_token(secret) if secret else None,
     )
     db.add(app)
-    audit(db, admin, "app.create", target=name, detail=f"client_id={body.client_id}", request=request)
+    audit(db, admin, "app.create", target=name, detail=f"client_id={client_id}", request=request)
     db.commit()
     invalidate_origins_cache()
     return ApplicationWithSecret(**_out(db, app).model_dump(), client_secret=secret)
