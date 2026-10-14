@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session as DbSession, selectinload
 
+from ..config import settings
 from ..database import get_db
 from ..deps import audit, require_admin, terminate_user_sessions
 from ..models import Role, User
@@ -44,6 +45,12 @@ def _ensure_unique(db: DbSession, *, username: str | None = None, email: str | N
             raise HTTPException(409, "Email is already in use")
 
 
+def _check_domain(email: str) -> None:
+    domain = settings.allowed_email_domain.lower()
+    if email.rsplit("@", 1)[-1] != domain:
+        raise HTTPException(400, f"Email must be a company address (@{domain})")
+
+
 def _role_label(role: Role) -> str:
     return f"{role.application.name}:{role.name}"
 
@@ -81,6 +88,7 @@ def list_users(q: str | None = None, db: DbSession = Depends(get_db), _: User = 
 def create_user(body: UserCreate, request: Request, db: DbSession = Depends(get_db),
                 admin: User = Depends(require_admin)):
     email = str(body.email).lower()
+    _check_domain(email)
     _ensure_unique(db, username=body.username, email=email)
     user = User(
         username=body.username,
@@ -112,6 +120,8 @@ def update_user(user_id: int, body: UserUpdate, request: Request, db: DbSession 
     kill_sessions = False
     if "email" in data:
         email = str(data["email"]).lower()
+        if email != user.email:  # only new addresses are checked, so older accounts can still be edited
+            _check_domain(email)
         _ensure_unique(db, email=email, exclude_id=user.id)
         user.email = email
     if "is_admin" in data:

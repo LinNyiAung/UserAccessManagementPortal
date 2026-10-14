@@ -31,8 +31,11 @@ class Settings(BaseSettings):
 
     # Initial administrator, created on first start when the database has no users.
     admin_username: str = "admin"
-    admin_email: str = "admin@example.com"
+    admin_email: str = "admin@pahtama.com"
     admin_password: str | None = None
+
+    # Users created or edited in the portal must have an email at this company domain.
+    allowed_email_domain: str = "pahtama.com"
 
     @field_validator("issuer", "frontend_url")
     @classmethod

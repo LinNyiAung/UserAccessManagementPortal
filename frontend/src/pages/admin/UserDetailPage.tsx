@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, errorMessage, generatePassword, type Application, type UserDetail } from "../../api";
+import { api, EMAIL_DOMAIN, errorMessage, generatePassword, type Application, type UserDetail } from "../../api";
 import { useAuth } from "../../auth";
 import { useFeedback } from "../../components/feedback";
 import Icon from "../../components/Icon";
@@ -186,7 +186,11 @@ export default function UserDetailPage() {
           <form className="card" onSubmit={saveProfile}>
             <h2>Account</h2>
             <Alert>{profileError}</Alert>
-            <label>Email<input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} required /></label>
+            <label>
+              Email
+              <input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} required />
+              <span className="hint">A new address must end in @{EMAIL_DOMAIN}.</span>
+            </label>
             <label>
               Reset password
               <PasswordInput

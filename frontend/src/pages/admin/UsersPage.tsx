@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, errorMessage, generatePassword, type UserDetail, type UserListItem } from "../../api";
+import { api, EMAIL_DOMAIN, EMAIL_PATTERN, errorMessage, generatePassword, type UserDetail, type UserListItem } from "../../api";
 import { useFeedback } from "../../components/feedback";
 import Icon from "../../components/Icon";
 import { Alert, Avatar, Badge, EmptyState, Modal, PageHeader, PasswordInput, Spinner, StatusBadge, TimeAgo } from "../../components/ui";
@@ -159,7 +159,16 @@ export default function UsersPage() {
           </label>
           <label>
             Email
-            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value.toLowerCase() })}
+              placeholder={`name@${EMAIL_DOMAIN}`}
+              pattern={EMAIL_PATTERN}
+              title={`Use a company address ending in @${EMAIL_DOMAIN}`}
+              required
+            />
+            <span className="hint">Company address only (@{EMAIL_DOMAIN}).</span>
           </label>
           <label className="span-2">
             Initial password

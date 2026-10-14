@@ -37,6 +37,10 @@ export function errorMessage(err: unknown): string {
 
 // ---------------------------------------------------------------- types
 
+/** User emails must be at the company domain (the backend's ALLOWED_EMAIL_DOMAIN enforces it). */
+export const EMAIL_DOMAIN = "pahtama.com";
+export const EMAIL_PATTERN = `[^@\\s]+@${EMAIL_DOMAIN.replace(/\./g, "\\.")}`;
+
 export interface User {
   id: number;
   username: string;
